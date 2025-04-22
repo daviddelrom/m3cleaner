@@ -1,19 +1,21 @@
 # 🎬 M3Cleaner
 
-This is a Python script that lets you **filter, enable/disable, and switch stream sources for IPTV channels** in `.m3u` playlists, while storing your preferences in a local database for future use.
+**M3Cleaner** is a Python script that lets you **manage `.m3u` IPTV playlists**: enable/disable channels, select the preferred stream for each one, and save your preferences in a local database for future use.
 
-> Perfect for managing custom IPTV playlists and keeping a clean, persistent channel setup!
+> Ideal for keeping your IPTV playlists clean, organized, and personalized.
 
 ---
 
 ## 📌 Features
 
-- ✅ **Load an M3U playlist** and analyze all unique channels (`tvg-id`).
-- 🧠 **Store your preferences** (active status and selected stream) in a local SQLite database.
-- 🔄 **Enable or disable channels** individually or in bulk.
-- 🧬 **Switch between different stream sources** for the same channel.
-- 💾 **Generate a new filtered `.m3u` file** based on your preferences.
-- ♻️ **Automatically reuse saved preferences** the next time a matching playlist is loaded.
+- ✅ **Load M3U playlists** from a local file or a remote URL.
+- 🧠 **Store your preferences** (channel status and selected stream) in SQLite.
+- 🧪 **Automatically add new channels** as inactive when new `tvg-id`s are detected.
+- 🔄 **Enable or disable channels**, individually or in bulk.
+- 🔁 **Switch stream sources** for each channel when multiple are available.
+- 🎯 **Only one source per active channel** is included in the generated list.
+- 🎨 **Visual terminal interface** using colors for active/inactive channels.
+- 💾 **Generate a new `.m3u` file** filtered based on your saved preferences.
 
 ---
 
@@ -32,20 +34,22 @@ This is a Python script that lets you **filter, enable/disable, and switch strea
 ## 🚀 Requirements
 
 - Python 3.7 or higher
-- No external dependencies required (uses Python's standard library)
+- No external dependencies required (only standard Python libraries)
 
 ---
 
 ## ⚙️ Usage
 
 ```bash
-python m3u_filter.py original_playlist.m3u
+python m3u_filter.py playlist.m3u
+# or
+python m3u_filter.py https://example.com/playlist.m3u
 ```
 
-Once loaded, you'll see an interactive menu:
+After loading the file (from disk or URL), you'll see an interactive menu:
 
 ```
-Menu:
+🎛️ Main Menu:
 1. Enable/disable individual channels
 2. Enable all channels
 3. Disable all channels
@@ -56,15 +60,19 @@ q. Quit
 
 ---
 
-## 🧠 Preference Database
+## 🧠 How the database works
 
-The script automatically creates a `preferencias_canales.db` file (SQLite) that stores:
+The script creates and uses `preferencias_canales.db` with two tables:
 
-- The `tvg-id` of the channel
-- The selected variant (name + URL)
-- Whether the channel is **enabled or disabled**
+### Table `channels`
+- `tvg_id`: unique channel identifier
+- `activo`: whether the channel is enabled (1) or not (0)
 
-These preferences will be reused automatically the next time you analyze a playlist containing the same channels.
+### Table `sources`
+- `tvg_id`: associated channel ID
+- `nombre`: name of the stream variant
+- `url`: stream URL
+- `activo`: only one active source per channel
 
 ---
 
@@ -72,12 +80,12 @@ These preferences will be reused automatically the next time you analyze a playl
 
 ```m3u
 #EXTM3U
-#EXTINF:-1 tvg-id="ExampleChannel1" group-title="News",Example Channel 1 HD
-http://192.168.1.100:8080/stream1
-#EXTINF:-1 tvg-id="ExampleChannel1" group-title="News",Example Channel 1 SD
-http://192.168.1.100:8080/stream2
-#EXTINF:-1 tvg-id="ExampleChannel2" group-title="Sports",Sports Channel
-http://192.168.1.100:8080/stream3
+#EXTINF:-1 tvg-id="ExampleChannel1",Example HD
+http://localhost:8000/stream1
+#EXTINF:-1 tvg-id="ExampleChannel1",Example SD
+http://localhost:8000/stream2
+#EXTINF:-1 tvg-id="ExampleChannel2",Sports Channel
+http://localhost:8000/stream3
 ```
 
 ---
@@ -86,28 +94,31 @@ http://192.168.1.100:8080/stream3
 
 ```m3u
 #EXTM3U
-#EXTINF:-1 tvg-id="ExampleChannel1" group-title="News",Example Channel 1 HD
-http://192.168.1.100:8080/stream1
-#EXTINF:-1 tvg-id="ExampleChannel2" group-title="Sports",Sports Channel
-http://192.168.1.100:8080/stream3
+#EXTINF:-1 tvg-id="ExampleChannel1",ExampleChannel1
+http://localhost:8000/stream1
+#EXTINF:-1 tvg-id="ExampleChannel2",ExampleChannel2
+http://localhost:8000/stream3
 ```
+
+Only **enabled channels** with **one active stream source** are included.
 
 ---
 
 ## 📌 Notes
 
-- If a channel has multiple variants (`tvg-id` matches), you can choose your preferred one.
-- Only **enabled** channels will be included in the final output.
-- All your selections (stream and status) are saved for future sessions.
+- New `tvg-id`s are added as **inactive by default**.
+- You can select **one active source per channel**, stored persistently.
+- All preferences are reused automatically on future runs.
+- You can load new playlists at any time without restarting the program.
 
 ---
 
 ## 🧪 To-Do & Future Improvements
 
-- [ ] GUI using Tkinter or PyQT
-- [ ] Export to other formats: `.json`, `.xml`, `.csv`
-- [ ] Cross-device channel favorite sync
-- [ ] Support for `EPG` and custom logos
+- [ ] GUI using Tkinter or PyQt
+- [ ] Export to other formats (`.json`, `.xml`, `.csv`)
+- [ ] Cross-device favorites sync
+- [ ] EPG and custom logo support
 
 ---
 
@@ -124,4 +135,5 @@ MIT License – Feel free to use it, with love and respect for open source! 💛
 ---
 
 Thanks for using this project!  
-Want to see improvements? Found a bug? Open an issue or send a PR! 🚀
+Want to suggest improvements or found a bug? Open an issue or send a PR! 🚀
+
