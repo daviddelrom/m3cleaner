@@ -59,18 +59,40 @@ def cargar_m3u(archivo):
     return canales
 
 
+def limpiar_fuentes_inactivas():
+    """Eliminar las fuentes que no estén marcadas como activas."""
+    with sqlite3.connect(DB_FILE) as conn:
+        conn.execute("DELETE FROM sources WHERE activo = 0")
+
+
 def registrar_canales(canales):
     with sqlite3.connect(DB_FILE) as conn:
+        # Limpiar las fuentes inactivas antes de insertar nuevas fuentes
+        limpiar_fuentes_inactivas()
+
         for tvg_id, nombre, url in canales:
             conn.execute("INSERT OR IGNORE INTO channels (tvg_id) VALUES (?)", (tvg_id,))
 
             cursor = conn.execute("SELECT COUNT(*) FROM sources WHERE tvg_id = ?", (tvg_id,))
             if cursor.fetchone()[0] == 0:
-                conn.execute("INSERT INTO sources (tvg_id, nombre, url, activo) VALUES (?, ?, ?, 1)",
+                # Si la fuente no existe, se agrega
+                conn.execute("INSERT INTO sources (tvg_id, nombre, url, activo) VALUES (?, ?, ?, 0)",
                              (tvg_id, nombre, url))
             else:
+                # Si ya existe, respetamos la fuente activa si está presente
                 conn.execute("INSERT OR IGNORE INTO sources (tvg_id, nombre, url, activo) VALUES (?, ?, ?, 0)",
                              (tvg_id, nombre, url))
+                # Si la fuente estaba activa anteriormente, respetar la decisión
+                # conn.execute('''UPDATE sources SET activo = 0
+                #                  WHERE tvg_id = ? AND url = ?''',
+                #              (tvg_id, url))
+
+        # Eliminar fuentes duplicadas basadas en tvg_id y url
+        conn.execute('''
+            DELETE FROM sources WHERE id NOT IN (
+                SELECT MIN(id) FROM sources GROUP BY tvg_id, url
+            )
+        ''')
 
 
 def listar_canales():
@@ -117,12 +139,18 @@ def cambiar_fuente():
             idx = int(entrada) - 1
             if 0 <= idx < len(activos):
                 tvg_id = activos[idx]
-                cursor = conn.execute("SELECT id, nombre, activo FROM sources WHERE tvg_id = ?", (tvg_id,))
+                # Mostrar URL del canal
+                cursor = conn.execute("SELECT url FROM sources WHERE tvg_id = ? AND activo = 1", (tvg_id,))
+                url_data = cursor.fetchone()
+                url = url_data[0] if url_data else "No URL disponible"
+                print(f"URL del canal {CYAN}{tvg_id}{RESET}: {url}")
+
+                cursor = conn.execute("SELECT id, nombre, activo ,url FROM sources WHERE tvg_id = ?", (tvg_id,))
                 fuentes = cursor.fetchall()
                 print(f"\nFuentes para {CYAN}{tvg_id}{RESET}:")
-                for i, (fid, nombre, activo) in enumerate(fuentes):
+                for i, (fid, nombre, activo, url) in enumerate(fuentes):
                     est = f"{GREEN}(actual){RESET}" if activo else ""
-                    print(f"{i+1}. {nombre} {est}")
+                    print(f"{i+1}. {nombre} {url} {est}")
 
                 eleccion = input("Selecciona nueva fuente: ")
                 if eleccion.isdigit():
