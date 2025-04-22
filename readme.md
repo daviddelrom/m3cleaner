@@ -23,7 +23,7 @@
 
 ```
 .
-├── m3u_filter.py           # Main script
+├── m3cleaner.py           # Main script
 ├── preferencias_canales.db # SQLite database (auto-created)
 ├── README.md               # This file
 └── filtrado.m3u            # Output file (filtered playlist)
@@ -41,9 +41,9 @@
 ## ⚙️ Usage
 
 ```bash
-python m3u_filter.py playlist.m3u
+python m3cleaner.py playlist.m3u
 # or
-python m3u_filter.py https://example.com/playlist.m3u
+python m3cleaner.py https://example.com/playlist.m3u
 ```
 
 After loading the file (from disk or URL), you'll see an interactive menu:
